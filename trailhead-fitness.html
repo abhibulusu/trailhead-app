@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Trailhead</title>
+
+<!-- PWA / home-screen app behavior -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Trailhead">
+<meta name="theme-color" content="#2F6B4F">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232F6B4F'/%3E%3Cpath d='M22 78 L42 30 L54 52 L66 34 L80 78' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232F6B4F'/%3E%3Cpath d='M22 78 L42 30 L54 52 L66 34 L80 78' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16241C;
+    --ink-soft:#4B5C51;
+    --bg:#EEF3EC;
+    --surface:#FFFFFF;
+    --primary:#2F6B4F;
+    --primary-dark:#204A36;
+    --primary-soft:#DCEAE1;
+    --accent:#E08E2B;
+    --accent-soft:#FBEAD3;
+    --line:#D7E2D9;
+    --shadow: 0 1px 2px rgba(22,36,28,0.04), 0 8px 24px rgba(22,36,28,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(47,107,79,0.08) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Nunito Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:calc(28px + env(safe-area-inset-top)) 20px calc(80px + env(safe-area-inset-bottom));
+  }
+  header.top{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .mark{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:var(--primary-dark);
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:28px;
+    letter-spacing:-0.01em;
+  }
+  .mark svg{width:26px;height:26px;flex-shrink:0;}
+  .tagline{
+    margin-top:4px;
+    color:var(--ink-soft);
+    font-size:15px;
+  }
+
+  /* trail step indicator */
+  .trail{
+    position:relative;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin:30px 6px 34px;
+  }
+  .trail::before{
+    content:"";
+    position:absolute;
+    top:15px;
+    left:15px;
+    right:15px;
+    height:0;
+    border-top:2px dashed var(--line);
+    z-index:0;
+  }
+  .trail .fill{
+    position:absolute;
+    top:15px;
+    left:15px;
+    height:0;
+    border-top:2px dashed var(--primary);
+    z-index:0;
+    transition:width .35s ease;
+  }
+  .step-marker{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    width:33%;
+  }
+  .dot{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--surface);
+    border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:14px;
+    color:var(--ink-soft);
+    transition:all .25s ease;
+  }
+  .step-marker.active .dot{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    box-shadow:0 0 0 5px var(--accent-soft);
+  }
+  .step-marker.done .dot{
+    background:var(--primary);
+    border-color:var(--primary);
+    color:#fff;
+  }
+  .step-marker .label{
+    font-size:12.5px;
+    text-align:center;
+    color:var(--ink-soft);
+    max-width:110px;
+    line-height:1.25;
+  }
+  .step-marker.active .label{color:var(--ink);font-weight:700;}
+
+  .panel{
+    background:var(--surface);
+    border-radius:20px;
+    border:1px solid var(--line);
+    box-shadow:var(--shadow);
+    padding:26px 22px;
+  }
+  .panel h2{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:23px;
+    margin:0 0 6px;
+  }
+  .panel .sub{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    line-height:1.5;
+    margin:0 0 20px;
+  }
+
+  /* equipment grid */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+  }
+  @media (max-width:420px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  .tile{
+    border:1.5px solid var(--line);
+    background:var(--bg);
+    border-radius:14px;
+    padding:14px 8px 12px;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    cursor:pointer;
+    user-select:none;
+    text-align:center;
+    transition:all .15s ease;
+  }
+  .tile svg{width:28px;height:28px;color:var(--ink-soft);transition:color .15s;}
+  .tile span{font-size:12px;font-weight:700;color:var(--ink-soft);line-height:1.2;}
+  .tile:hover{border-color:var(--primary);}
+  .tile.on{
+    background:var(--primary-soft);
+    border-color:var(--primary);
+  }
+  .tile.on svg, .tile.on span{color:var(--primary-dark);}
+
+  /* goal cards */
+  .goals{display:flex;flex-direction:column;gap:10px;}
+  .goal-card{
+    border:1.5px solid var(--line);
+    border-radius:14px;
+    padding:15px 16px;
+    cursor:pointer;
+    display:flex;align-items:center;gap:14px;
+    transition:all .15s ease;
+    background:var(--bg);
+  }
+  .goal-card:hover{border-color:var(--primary);}
+  .goal-card.on{background:var(--primary-soft);border-color:var(--primary);}
+  .goal-card svg{width:26px;height:26px;flex-shrink:0;color:var(--primary-dark);}
+  .goal-card .t{font-weight:800;font-size:15.5px;}
+  .goal-card .d{font-size:13px;color:var(--ink-soft);margin-top:1px;}
+
+  .actions{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:10px;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn-primary{
+    background:var(--primary);
+    color:#fff;
+    font-weight:800;
+    font-size:15px;
+    padding:13px 22px;
+    border-radius:12px;
+    transition:background .15s;
+  }
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-primary:disabled{background:#B9C6BE;cursor:not-allowed;}
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:14px;
+    padding:12px 8px;
+  }
+  .btn-ghost:hover{color:var(--ink);}
+
+  /* workout list */
+  .ex-card{
+    border:1.5px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:12px;
+    background:var(--bg);
+    transition:background .2s;
+  }
+  .ex-card.done{background:var(--primary-soft);border-color:var(--primary);}
+  .ex-top{display:flex;gap:12px;align-items:flex-start;}
+  .ex-icon{
+    width:44px;height:44px;border-radius:12px;flex-shrink:0;
+    background:var(--surface);
+    border:1.5px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ex-icon svg{width:24px;height:24px;color:var(--primary-dark);}
+  .ex-info{flex:1;min-width:0;}
+  .ex-name-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .ex-name{font-family:'Fraunces',serif;font-weight:600;font-size:16.5px;}
+  .ex-card.done .ex-name{text-decoration:line-through;color:var(--ink-soft);}
+  .ex-tag{
+    display:inline-block;margin-top:3px;
+    font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--primary-dark);background:var(--primary-soft);
+    padding:2px 8px;border-radius:20px;
+  }
+  .ex-instruction{font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.45;}
+  .ex-meta{font-size:12.5px;font-weight:800;color:var(--ink);white-space:nowrap;margin-top:2px;}
+  .check{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--line);
+    background:var(--surface);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .check.on{background:var(--primary);border-color:var(--primary);}
+  .check svg{width:14px;height:14px;color:#fff;opacity:0;transition:opacity .15s;}
+  .check.on svg{opacity:1;}
+  .more-btn{
+    margin-top:10px;background:none;border:none;padding:0;
+    font-size:12.5px;font-weight:800;color:var(--primary-dark);
+    display:flex;align-items:center;gap:4px;
+  }
+  .tip-box{
+    display:none;
+    margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:13px;color:var(--ink-soft);line-height:1.5;
+  }
+  .tip-box.show{display:block;}
+
+  .celebrate{
+    text-align:center;padding:16px;margin-top:6px;
+    background:var(--accent-soft);border-radius:14px;
+    font-family:'Fraunces',serif;font-weight:600;color:var(--primary-dark);
+    display:none;
+  }
+  .celebrate.show{display:block;}
+
+  .bottom-actions{display:flex;gap:10px;margin-top:18px;}
+  .bottom-actions button{flex:1;padding:13px;border-radius:12px;font-weight:800;font-size:13.5px;}
+  .swap-btn{background:var(--surface);border:1.5px solid var(--line)!important;color:var(--ink);}
+  .swap-btn:hover{border-color:var(--primary)!important;}
+  .reset-btn{background:transparent;color:var(--ink-soft);}
+  .reset-btn:hover{color:var(--ink);}
+
+  .footnote{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:22px;opacity:.8;}
+
+  .my-gym-banner{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--accent-soft);
+    border:1.5px solid var(--accent);
+    border-radius:14px;
+    padding:12px 14px;
+    margin-bottom:18px;
+  }
+  .my-gym-text{display:flex;flex-direction:column;line-height:1.3;}
+  .my-gym-text strong{font-family:'Fraunces',serif;font-size:15px;color:var(--primary-dark);}
+  .my-gym-text span{font-size:12px;color:var(--ink-soft);}
+  .btn-primary.small{padding:9px 16px;font-size:13px;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20 L10 6 L13 13 L16 8 L20 20"/><circle cx="10" cy="6" r="1.4" fill="currentColor" stroke="none"/></svg>
+      Trailhead
+    </div>
+    <div class="tagline">Walk into any gym. Walk out knowing exactly what to do.</div>
+  </header>
+
+  <div class="trail">
+    <div class="fill" id="trailFill" style="width:0%"></div>
+    <div class="step-marker active" id="marker1"><div class="dot">1</div><div class="label">Scout the floor</div></div>
+    <div class="step-marker" id="marker2"><div class="dot">2</div><div class="label">Pick today's focus</div></div>
+    <div class="step-marker" id="marker3"><div class="dot">3</div><div class="label">Your route</div></div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="panel" id="step1">
+    <div class="my-gym-banner" id="myGymBanner" style="display:none">
+      <div class="my-gym-text">
+        <strong id="myGymName">My Gym</strong>
+        <span>saved and ready</span>
+      </div>
+      <button class="btn-primary small" id="useMyGym">Continue →</button>
+    </div>
+    <h2>What's here today?</h2>
+    <p class="sub">Tap everything you can see on the floor. Don't know what something's called? Just skip it — we'll build around what you're sure of.</p>
+    <div class="grid" id="equipGrid"></div>
+    <div class="actions">
+      <button class="btn-ghost" id="saveGymBtn" style="display:none">💾 Save as My Gym</button>
+      <button class="btn-primary" id="toStep2" disabled>Next: pick a focus →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="panel" id="step2" style="display:none">
+    <h2>What are we working on?</h2>
+    <p class="sub">No wrong answer — just pick where you want today's energy to go.</p>
+    <div class="goals" id="goalList"></div>
+    <div class="actions">
+      <button class="btn-ghost" id="backTo1">← Back</button>
+      <button class="btn-primary" id="toStep3" disabled>Build my route →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="panel" id="step3" style="display:none">
+    <h2>Your route for today</h2>
+    <p class="sub">Follow these in order. Rest as long as you need between each one — there's no clock here.</p>
+    <div id="exList"></div>
+    <div class="celebrate" id="celebrate">Nice work. That's a full session in the books. 🌲</div>
+    <div class="bottom-actions">
+      <button class="swap-btn" id="swapBtn">🔁 Swap in different moves</button>
+      <button class="reset-btn" id="resetBtn">⟲ Start over</button>
+    </div>
+  </div>
+
+  <div class="footnote">Not affiliated with any gym chain. Just here to make the floor less intimidating.</div>
+</div>
+
+<script>
+/* ---------- ICONS ---------- */
+const ICONS = {
+  treadmill: `<path d="M3 18h14l3-3M3 18l3-3M14 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 10-1-5 3-2 2 2 3-1"/>`,
+  bike: `<circle cx="6" cy="17" r="3.2"/><circle cx="18" cy="17" r="3.2"/><path d="M6 17l4-8h4l3 5M10 9H8m4 8h4l2-5"/>`,
+  elliptical: `<circle cx="17" cy="6" r="1.6"/><path d="M17 8l-3 4-6 1-3 5m9-6 4 3-2 4H6"/>`,
+  legPress: `<path d="M4 16h5l2-6h6M4 16v3h5v-3M17 10l3-2v6l-3 2"/>`,
+  latPulldown: `<path d="M12 4v3M6 5l6 2 6-2M9 9l3-2 3 2M12 9v4M9 20l3-7 3 7"/>`,
+  cable: `<path d="M18 4v9a3 3 0 0 1-3 3H9M6 20l3-4-3-4"/><circle cx="18" cy="3" r="1.3"/>`,
+  chestPress: `<circle cx="12" cy="6" r="1.6"/><path d="M12 8v5M6 11h12M12 13l-4 7M12 13l4 7"/>`,
+  shoulderPress: `<circle cx="12" cy="5" r="1.6"/><path d="M12 7v3M5 6l7 4 7-4M12 10v6M9 20l3-4 3 4"/>`,
+  legExtension: `<circle cx="12" cy="5" r="1.6"/><path d="M12 7v6l-3 6M12 13l4 2 2-4"/>`,
+  legCurl: `<circle cx="12" cy="5" r="1.6"/><path d="M12 7v5l4 2M12 12l-4 1-1 5"/>`,
+  dumbbells: `<rect x="3" y="10" width="3" height="6" rx="1"/><rect x="18" y="10" width="3" height="6" rx="1"/><path d="M7 13h10"/>`,
+  smith: `<path d="M4 6h16M6 6v4l6 4 6-4V6M8 20l4-6 4 6"/>`,
+  rowMachine: `<path d="M2 16h6l3-3 4 1 6-2M14 14l1-4M20 4l-3 8"/>`,
+  bodyweight: `<circle cx="12" cy="4" r="1.6"/><path d="M12 6v6M12 8l-5 3M12 8l5 3M12 12l-3 8M12 12l3 8"/>`,
+  cardio: `<path d="M4 17l4-8 3 5 2-3 3 6 4-9"/><circle cx="18" cy="5" r="1.4"/>`,
+  squat: `<circle cx="12" cy="4" r="1.6"/><path d="M12 6v3l-4 3v6M12 9l4 3v6M8 12h8"/>`,
+  push: `<circle cx="6" cy="6" r="1.6"/><path d="M6 8v4l6 1 6-3M12 13v7M12 13l-3 7"/>`,
+  pull: `<circle cx="18" cy="6" r="1.6"/><path d="M18 8v4l-6 1-6-3M12 13v7M12 13l3 7"/>`,
+  hinge: `<circle cx="10" cy="4" r="1.6"/><path d="M10 6l4 4-2 3-6 1M12 13l6-1M8 13l-2 7M14 13l2 7"/>`,
+  core: `<circle cx="5" cy="8" r="1.6"/><path d="M5 10l5 1 9-2M10 11v4l3 5M10 11l-3 6"/>`,
+  check: `<path d="M4 12l5 5L20 6"/>`
+};
+function svg(name, extra=""){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra}>${ICONS[name]}</svg>`;
+}
+
+/* ---------- DATA ---------- */
+const EQUIPMENT = [
+  {id:'treadmill', label:'Treadmill', icon:'treadmill'},
+  {id:'bike', label:'Stationary Bike', icon:'bike'},
+  {id:'elliptical', label:'Elliptical', icon:'elliptical'},
+  {id:'rowMachine', label:'Rowing Machine', icon:'rowMachine'},
+  {id:'legPress', label:'Leg Press', icon:'legPress'},
+  {id:'smith', label:'Smith Machine', icon:'smith'},
+  {id:'legExtension', label:'Leg Extension', icon:'legExtension'},
+  {id:'legCurl', label:'Leg Curl', icon:'legCurl'},
+  {id:'latPulldown', label:'Lat Pulldown', icon:'latPulldown'},
+  {id:'cable', label:'Cable Machine', icon:'cable'},
+  {id:'chestPress', label:'Chest Press', icon:'chestPress'},
+  {id:'shoulderPress', label:'Shoulder Press', icon:'shoulderPress'},
+  {id:'dumbbells', label:'Dumbbells', icon:'dumbbells'},
+];
+
+const GOALS = [
+  {id:'full', title:'Full Body', desc:'One session, everything gets some love.', icon:'core'},
+  {id:'upper', title:'Upper Body', desc:'Arms, chest, back, shoulders.', icon:'push'},
+  {id:'lower', title:'Lower Body', desc:'Legs and glutes.', icon:'squat'},
+  {id:'moving', title:'Just Get Moving', desc:'Low pressure. Just get the blood flowing.', icon:'cardio'},
+];
+
+// pattern = movement family used for icon + variety control
+const EXERCISES = [
+  {id:'tmwalk', name:'Treadmill Walk', pattern:'cardio', muscle:'Cardio', equip:['treadmill'], goals:['moving','full'], sets:'1 round', reps:'8–12 min, easy pace', instr:'Walk at a pace where you could still hold a conversation.', tip:"This is your warm-up and your workout. No need to run — showing up is the win here."},
+  {id:'bikeride', name:'Stationary Bike', pattern:'cardio', muscle:'Cardio', equip:['bike'], goals:['moving','full'], sets:'1 round', reps:'8–12 min, light resistance', instr:'Keep pedaling smooth and steady — don\'t worry about the numbers.', tip:'If your legs burn a little, that\'s normal. Sharp pain is not — stop if you feel that.'},
+  {id:'ellipse', name:'Elliptical', pattern:'cardio', muscle:'Cardio', equip:['elliptical'], goals:['moving','full'], sets:'1 round', reps:'8–12 min', instr:'Hold the moving handles and let your legs set the pace.', tip:'Keep your chest tall instead of leaning on the console.'},
+  {id:'rowcardio', name:'Rowing Machine', pattern:'cardio', muscle:'Cardio', equip:['rowMachine'], goals:['moving','full'], sets:'1 round', reps:'5–8 min, easy pace', instr:'Push with your legs first, then lean back, then pull the handle to your chest.', tip:'Legs → hips → arms on the pull, then reverse the order coming back.'},
+
+  {id:'legpressmove', name:'Leg Press', pattern:'squat', muscle:'Legs', equip:['legPress'], goals:['lower','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Feet flat and shoulder-width on the plate, push through your heels.', tip:'Don\'t lock your knees straight at the top — keep a soft bend.'},
+  {id:'smithsquat', name:'Smith Machine Squat', pattern:'squat', muscle:'Legs', equip:['smith'], goals:['lower','full'], sets:'3 rounds', reps:'8–10 reps', instr:'Bar on your upper back, feet shoulder-width, lower slow like sitting into a chair.', tip:'Only go as low as feels controlled — partial reps still count.'},
+  {id:'bwsquat', name:'Bodyweight Squat', pattern:'squat', muscle:'Legs', equip:['bodyweight'], goals:['lower','full','moving'], sets:'3 rounds', reps:'10–15 reps', instr:'Feet shoulder-width, sit your hips back like lowering onto a chair, then stand.', tip:'Keep your weight in your heels and your chest up.'},
+  {id:'legext', name:'Leg Extension', pattern:'squat', muscle:'Quads', equip:['legExtension'], goals:['lower'], sets:'2–3 rounds', reps:'12–15 reps', instr:'Sit back, pad across your shins, extend your legs out slowly.', tip:'Pause a beat at the top before lowering back down.'},
+  {id:'legcurlmove', name:'Leg Curl', pattern:'hinge', muscle:'Hamstrings', equip:['legCurl'], goals:['lower'], sets:'2–3 rounds', reps:'12–15 reps', instr:'Lie or sit as the machine guides, curl your heels toward you.', tip:'Slow and controlled beats fast — no need to rush the rep.'},
+  {id:'glutebridge', name:'Glute Bridge', pattern:'hinge', muscle:'Glutes', equip:['bodyweight'], goals:['lower','full'], sets:'3 rounds', reps:'12–15 reps', instr:'Lie on your back, knees bent, push your hips up toward the ceiling.', tip:'Squeeze at the top like you\'re holding a coin between your glutes.'},
+
+  {id:'latpull', name:'Lat Pulldown', pattern:'pull', muscle:'Back', equip:['latPulldown'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Grab the bar wide, pull it down to your collarbone, control it back up.', tip:'Lead with your elbows, not your hands.'},
+  {id:'cablerow', name:'Seated Cable Row', pattern:'pull', muscle:'Back', equip:['cable'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Sit tall, pull the handle to your stomach, squeeze your shoulder blades together.', tip:'Don\'t lean back to yank it — let your back muscles do the work.'},
+  {id:'dbrow', name:'Dumbbell Row', pattern:'pull', muscle:'Back', equip:['dumbbells'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps per side', instr:'Support one knee on a bench, pull the dumbbell up toward your hip.', tip:'Keep your back flat — imagine a string pulling the top of your head forward.'},
+  {id:'rowpull', name:'Rowing Machine (strength focus)', pattern:'pull', muscle:'Back', equip:['rowMachine'], goals:['upper'], sets:'3 rounds', reps:'12–15 strokes', instr:'Same motion as cardio rowing, but slower and with more resistance.', tip:'Focus on squeezing your shoulder blades at the end of each pull.'},
+
+  {id:'chestpressmove', name:'Chest Press Machine', pattern:'push', muscle:'Chest', equip:['chestPress'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Grips at chest height, press forward until arms are extended, control it back.', tip:'Don\'t fully lock your elbows at the end — keep a small bend.'},
+  {id:'dbpress', name:'Dumbbell Floor/Bench Press', pattern:'push', muscle:'Chest', equip:['dumbbells'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Lying down, press the dumbbells up above your chest, lower slowly.', tip:'Keep your feet flat on the floor to stay stable.'},
+  {id:'shoulderpressmove', name:'Shoulder Press Machine', pattern:'push', muscle:'Shoulders', equip:['shoulderPress'], goals:['upper','full'], sets:'3 rounds', reps:'10–12 reps', instr:'Grips at shoulder height, press straight up, control it back down.', tip:'Keep your back against the pad the whole time.'},
+  {id:'dbshoulder', name:'Dumbbell Shoulder Press', pattern:'push', muscle:'Shoulders', equip:['dumbbells'], goals:['upper'], sets:'3 rounds', reps:'10–12 reps', instr:'Sitting or standing, press dumbbells overhead until arms are straight.', tip:'Avoid arching your lower back — keep your core braced.'},
+
+  {id:'plank', name:'Plank', pattern:'core', muscle:'Core', equip:['bodyweight'], goals:['full','upper','lower','moving'], sets:'2–3 rounds', reps:'20–30 sec hold', instr:'Forearms and toes on the ground, body in a straight line from head to heels.', tip:'Squeeze your stomach like you\'re about to be poked — that keeps your hips from sagging.'},
+];
+
+/* ---------- SAVE MY GYM (localStorage, with in-memory fallback) ---------- */
+const MEM_FALLBACK = {};
+const gymStore = {
+  get(key){
+    try { return localStorage.getItem(key); }
+    catch(e){ return MEM_FALLBACK[key] ?? null; }
+  },
+  set(key, val){
+    try { localStorage.setItem(key, val); }
+    catch(e){ MEM_FALLBACK[key] = val; }
+  }
+};
+function getSavedGym(){
+  const raw = gymStore.get('trailhead-my-gym');
+  if(!raw) return null;
+  try { return JSON.parse(raw); } catch(e){ return null; }
+}
+function saveGym(equipmentArray){
+  const name = 'My Gym';
+  gymStore.set('trailhead-my-gym', JSON.stringify({name, equipment: equipmentArray}));
+}
+
+/* ---------- STATE ---------- */
+let state = {
+  equipment: new Set(),
+  goal: null,
+  workout: [],
+  doneIds: new Set(),
+  usedIdsHistory: new Set() // for swap variety
+};
+
+/* ---------- STEP 1: build equipment grid ---------- */
+const equipGrid = document.getElementById('equipGrid');
+EQUIPMENT.forEach(e=>{
+  const tile = document.createElement('div');
+  tile.className = 'tile';
+  tile.innerHTML = svg(e.icon) + `<span>${e.label}</span>`;
+  tile.addEventListener('click', ()=>{
+    if(state.equipment.has(e.id)){ state.equipment.delete(e.id); tile.classList.remove('on'); }
+    else { state.equipment.add(e.id); tile.classList.add('on'); }
+    document.getElementById('toStep2').disabled = state.equipment.size === 0;
+    document.getElementById('saveGymBtn').style.display = state.equipment.size === 0 ? 'none' : 'inline-block';
+  });
+  equipGrid.appendChild(tile);
+});
+
+/* ---------- SAVE MY GYM: wire up banner + save button ---------- */
+document.getElementById('saveGymBtn').addEventListener('click', ()=>{
+  saveGym(Array.from(state.equipment));
+  const btn = document.getElementById('saveGymBtn');
+  const original = btn.textContent;
+  btn.textContent = '✓ Saved';
+  setTimeout(()=>{ btn.textContent = original; }, 1600);
+  showMyGymBanner();
+});
+
+function applyEquipment(idArray){
+  state.equipment = new Set(idArray);
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('on'));
+  EQUIPMENT.forEach((e,i)=>{
+    if(state.equipment.has(e.id)) equipGrid.children[i].classList.add('on');
+  });
+  document.getElementById('toStep2').disabled = state.equipment.size === 0;
+  document.getElementById('saveGymBtn').style.display = state.equipment.size === 0 ? 'none' : 'inline-block';
+}
+
+function showMyGymBanner(){
+  const saved = getSavedGym();
+  const banner = document.getElementById('myGymBanner');
+  if(saved && saved.equipment && saved.equipment.length){
+    document.getElementById('myGymName').textContent = saved.name || 'My Gym';
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+document.getElementById('useMyGym').addEventListener('click', ()=>{
+  const saved = getSavedGym();
+  if(saved) { applyEquipment(saved.equipment); setStep(2); }
+});
+showMyGymBanner();
+
+/* ---------- STEP 2: build goal cards ---------- */
+const goalList = document.getElementById('goalList');
+GOALS.forEach(g=>{
+  const card = document.createElement('div');
+  card.className = 'goal-card';
+  card.innerHTML = `${svg(g.icon)}<div><div class="t">${g.title}</div><div class="d">${g.desc}</div></div>`;
+  card.addEventListener('click', ()=>{
+    document.querySelectorAll('.goal-card').forEach(c=>c.classList.remove('on'));
+    card.classList.add('on');
+    state.goal = g.id;
+    document.getElementById('toStep3').disabled = false;
+  });
+  goalList.appendChild(card);
+});
+
+/* ---------- NAVIGATION ---------- */
+function setStep(n){
+  ['step1','step2','step3'].forEach((id,i)=>{
+    document.getElementById(id).style.display = (i===n-1) ? 'block':'none';
+  });
+  [1,2,3].forEach(i=>{
+    const m = document.getElementById('marker'+i);
+    m.classList.remove('active','done');
+    if(i < n) m.classList.add('done');
+    if(i === n) m.classList.add('active');
+  });
+  document.getElementById('trailFill').style.width = n===1 ? '0%' : n===2 ? '50%' : '100%';
+}
+document.getElementById('toStep2').addEventListener('click', ()=>setStep(2));
+document.getElementById('backTo1').addEventListener('click', ()=>setStep(1));
+document.getElementById('toStep3').addEventListener('click', ()=>{ buildWorkout(); renderWorkout(); setStep(3); });
+document.getElementById('swapBtn').addEventListener('click', ()=>{ buildWorkout(true); renderWorkout(); });
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  state = {equipment:new Set(), goal:null, workout:[], doneIds:new Set(), usedIdsHistory:new Set()};
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.goal-card').forEach(c=>c.classList.remove('on'));
+  document.getElementById('toStep2').disabled = true;
+  document.getElementById('toStep3').disabled = true;
+  document.getElementById('saveGymBtn').style.display = 'none';
+  showMyGymBanner();
+  setStep(1);
+});
+
+/* ---------- WORKOUT BUILDER ---------- */
+const SLOTS_BY_GOAL = {
+  full:   ['cardio','squat','push','pull','hinge','core'],
+  upper:  ['push','pull','push','pull','core'],
+  lower:  ['squat','hinge','squat','hinge','core'],
+  moving: ['cardio','cardio','squat','core'],
+};
+
+function available(equip){
+  if(equip.includes('bodyweight')) return true;
+  return equip.some(id => state.equipment.has(id));
+}
+
+function buildWorkout(swap=false){
+  const slots = SLOTS_BY_GOAL[state.goal];
+  const chosen = [];
+  const usedPatternIds = new Set();
+
+  slots.forEach(pattern=>{
+    let candidates = EXERCISES.filter(ex =>
+      ex.pattern === pattern &&
+      ex.goals.includes(state.goal) &&
+      available(ex.equip) &&
+      !chosen.find(c=>c.id===ex.id)
+    );
+    // prefer non-bodyweight (real equipment) matches first
+    const machineOnes = candidates.filter(c=>!c.equip.includes('bodyweight'));
+    const pool = machineOnes.length ? machineOnes : candidates;
+    if(pool.length === 0) return;
+
+    let pick;
+    if(swap){
+      const fresh = pool.filter(c=>!state.usedIdsHistory.has(c.id));
+      pick = (fresh.length ? fresh : pool)[Math.floor(Math.random()*(fresh.length?fresh.length:pool.length))];
+    } else {
+      pick = pool[Math.floor(Math.random()*pool.length)];
+    }
+    chosen.push(pick);
+    state.usedIdsHistory.add(pick.id);
+  });
+
+  state.workout = chosen;
+  state.doneIds = new Set();
+}
+
+function renderWorkout(){
+  const list = document.getElementById('exList');
+  list.innerHTML = '';
+  document.getElementById('celebrate').classList.remove('show');
+
+  state.workout.forEach(ex=>{
+    const card = document.createElement('div');
+    card.className = 'ex-card';
+    card.innerHTML = `
+      <div class="ex-top">
+        <div class="ex-icon">${svg(ex.pattern)}</div>
+        <div class="ex-info">
+          <div class="ex-name-row">
+            <div>
+              <div class="ex-name">${ex.name}</div>
+              <span class="ex-tag">${ex.muscle}</span>
+            </div>
+            <div class="check" data-id="${ex.id}">${svg('check')}</div>
+          </div>
+          <div class="ex-instruction">${ex.instr}</div>
+          <div class="ex-meta">${ex.sets} · ${ex.reps}</div>
+          <button class="more-btn" data-id="${ex.id}">+ Show me how</button>
+          <div class="tip-box" id="tip-${ex.id}">${ex.tip}</div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+
+    card.querySelector('.check').addEventListener('click', function(){
+      const on = this.classList.toggle('on');
+      card.classList.toggle('done', on);
+      if(on) state.doneIds.add(ex.id); else state.doneIds.delete(ex.id);
+      if(state.doneIds.size === state.workout.length){
+        document.getElementById('celebrate').classList.add('show');
+      } else {
+        document.getElementById('celebrate').classList.remove('show');
+      }
+    });
+    card.querySelector('.more-btn').addEventListener('click', function(){
+      const box = document.getElementById('tip-'+ex.id);
+      const showing = box.classList.toggle('show');
+      this.textContent = showing ? '– Hide tip' : '+ Show me how';
+    });
+  });
+}
+</script>
+</body>
+</html>
