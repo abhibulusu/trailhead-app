@@ -289,6 +289,26 @@
 
   .footnote{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:22px;opacity:.8;}
 
+  .scan-row{margin-bottom:14px;}
+  .btn-scan{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--primary-soft);color:var(--primary-dark);
+    font-weight:800;font-size:14px;padding:12px;
+    border-radius:12px;border:1.5px dashed var(--primary);
+    transition:all .15s ease;
+  }
+  .btn-scan:hover{background:var(--primary);color:#fff;}
+  .btn-scan:disabled{opacity:.65;cursor:wait;}
+  .btn-scan svg{width:20px;height:20px;flex-shrink:0;}
+  .scan-result{
+    margin-bottom:14px;padding:12px 14px;border-radius:12px;
+    font-size:13.5px;line-height:1.45;display:none;
+  }
+  .scan-result strong{display:block;font-family:'Fraunces',serif;font-size:14.5px;margin-bottom:2px;}
+  .scan-result.ok{background:var(--primary-soft);border:1.5px solid var(--primary);color:var(--primary-dark);}
+  .scan-result.warn{background:var(--accent-soft);border:1.5px solid var(--accent);color:var(--ink);}
+  .scan-result.err{background:#FBEAEA;border:1.5px solid #D9534F;color:#8A2F2A;}
+
   .my-gym-banner{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
     background:var(--accent-soft);
@@ -332,6 +352,11 @@
     </div>
     <h2>What's here today?</h2>
     <p class="sub">Tap everything you can see on the floor. Don't know what something's called? Just skip it — we'll build around what you're sure of.</p>
+    <div class="scan-row">
+      <button class="btn-scan" id="scanBtn" type="button"><span id="scanBtnLabel">Scan equipment with camera</span></button>
+      <input type="file" accept="image/*" capture="environment" id="scanInput" style="display:none">
+    </div>
+    <div class="scan-result" id="scanResult"></div>
     <div class="grid" id="equipGrid"></div>
     <div class="actions">
       <button class="btn-ghost" id="saveGymBtn" style="display:none">💾 Save as My Gym</button>
@@ -388,7 +413,8 @@ const ICONS = {
   pull: `<circle cx="18" cy="6" r="1.6"/><path d="M18 8v4l-6 1-6-3M12 13v7M12 13l3 7"/>`,
   hinge: `<circle cx="10" cy="4" r="1.6"/><path d="M10 6l4 4-2 3-6 1M12 13l6-1M8 13l-2 7M14 13l2 7"/>`,
   core: `<circle cx="5" cy="8" r="1.6"/><path d="M5 10l5 1 9-2M10 11v4l3 5M10 11l-3 6"/>`,
-  check: `<path d="M4 12l5 5L20 6"/>`
+  check: `<path d="M4 12l5 5L20 6"/>`,
+  camera: `<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/>`
 };
 function svg(name, extra=""){
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${extra}>${ICONS[name]}</svg>`;
@@ -445,6 +471,78 @@ const EXERCISES = [
   {id:'plank', name:'Plank', pattern:'core', muscle:'Core', equip:['bodyweight'], goals:['full','upper','lower','moving'], sets:'2–3 rounds', reps:'20–30 sec hold', instr:'Forearms and toes on the ground, body in a straight line from head to heels.', tip:'Squeeze your stomach like you\'re about to be poked — that keeps your hips from sagging.'},
 ];
 
+/* ---------- PHOTO SCAN (equipment identification via Trailhead API) ---------- */
+// Point this at your running TrailheadApi instance (see TrailheadApi/README or Properties/launchSettings.json).
+const API_BASE = 'https://localhost:7171';
+
+const scanBtn = document.getElementById('scanBtn');
+const scanBtnLabel = document.getElementById('scanBtnLabel');
+const scanInput = document.getElementById('scanInput');
+const scanResult = document.getElementById('scanResult');
+scanBtnLabel.innerHTML = svg('camera') + ' Scan equipment with camera';
+
+scanBtn.addEventListener('click', ()=> scanInput.click());
+
+scanInput.addEventListener('change', async ()=>{
+  const file = scanInput.files[0];
+  scanInput.value = ''; // allow re-selecting the same file next time
+  if(!file) return;
+
+  scanBtn.disabled = true;
+  scanBtnLabel.textContent = 'Scanning…';
+  showScanResult(null);
+
+  try{
+    const formData = new FormData();
+    formData.append('photo', file);
+    const res = await fetch(`${API_BASE}/api/identify-equipment`, { method: 'POST', body: formData });
+    if(!res.ok){
+      const body = await res.json().catch(()=>({}));
+      throw new Error(body.error || body.detail || `Server responded ${res.status}`);
+    }
+    handleScanResult(await res.json());
+  } catch(err){
+    showScanResult({
+      tone: 'err',
+      title: "Couldn't reach the scanner",
+      body: 'Add the equipment manually below, or check that the Trailhead API is running.'
+    });
+    console.error('Equipment scan failed:', err);
+  } finally{
+    scanBtn.disabled = false;
+    scanBtnLabel.innerHTML = svg('camera') + ' Scan equipment with camera';
+  }
+});
+
+function handleScanResult(data){
+  const known = EQUIPMENT.find(e => e.id === data.equipmentId);
+  if(known && data.confidence !== 'low'){
+    setTileState(data.equipmentId, true);
+    showScanResult({
+      tone: 'ok',
+      title: data.brand ? `${data.brand} ${data.machineName}` : data.machineName,
+      body: `Added "${known.label}" to your floor. ${data.note || ''}`
+    });
+  } else {
+    showScanResult({
+      tone: 'warn',
+      title: (data.equipmentId !== 'unknown' && data.machineName) ? data.machineName : "Couldn't quite place that one",
+      body: data.note || 'Tap it manually below if you know what it is.'
+    });
+  }
+}
+
+function showScanResult(info){
+  scanResult.innerHTML = '';
+  if(!info){ scanResult.style.display = 'none'; scanResult.className = 'scan-result'; return; }
+  scanResult.className = `scan-result ${info.tone}`;
+  const strong = document.createElement('strong');
+  strong.textContent = info.title; // built from vision-model output — never trust as HTML
+  scanResult.appendChild(strong);
+  scanResult.appendChild(document.createTextNode(info.body));
+  scanResult.style.display = 'block';
+}
+
 /* ---------- SAVE MY GYM (localStorage, with in-memory fallback) ---------- */
 const MEM_FALLBACK = {};
 const gymStore = {
@@ -478,16 +576,26 @@ let state = {
 
 /* ---------- STEP 1: build equipment grid ---------- */
 const equipGrid = document.getElementById('equipGrid');
+const tileEls = {};
+
+function refreshStepControls(){
+  document.getElementById('toStep2').disabled = state.equipment.size === 0;
+  document.getElementById('saveGymBtn').style.display = state.equipment.size === 0 ? 'none' : 'inline-block';
+}
+function setTileState(id, on){
+  const tile = tileEls[id];
+  if(!tile) return;
+  if(on){ state.equipment.add(id); tile.classList.add('on'); }
+  else { state.equipment.delete(id); tile.classList.remove('on'); }
+  refreshStepControls();
+}
+
 EQUIPMENT.forEach(e=>{
   const tile = document.createElement('div');
   tile.className = 'tile';
   tile.innerHTML = svg(e.icon) + `<span>${e.label}</span>`;
-  tile.addEventListener('click', ()=>{
-    if(state.equipment.has(e.id)){ state.equipment.delete(e.id); tile.classList.remove('on'); }
-    else { state.equipment.add(e.id); tile.classList.add('on'); }
-    document.getElementById('toStep2').disabled = state.equipment.size === 0;
-    document.getElementById('saveGymBtn').style.display = state.equipment.size === 0 ? 'none' : 'inline-block';
-  });
+  tile.addEventListener('click', ()=> setTileState(e.id, !state.equipment.has(e.id)));
+  tileEls[e.id] = tile;
   equipGrid.appendChild(tile);
 });
 
@@ -502,13 +610,10 @@ document.getElementById('saveGymBtn').addEventListener('click', ()=>{
 });
 
 function applyEquipment(idArray){
-  state.equipment = new Set(idArray);
-  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('on'));
-  EQUIPMENT.forEach((e,i)=>{
-    if(state.equipment.has(e.id)) equipGrid.children[i].classList.add('on');
-  });
-  document.getElementById('toStep2').disabled = state.equipment.size === 0;
-  document.getElementById('saveGymBtn').style.display = state.equipment.size === 0 ? 'none' : 'inline-block';
+  state.equipment = new Set();
+  Object.values(tileEls).forEach(t=>t.classList.remove('on'));
+  idArray.forEach(id=>{ if(tileEls[id]){ state.equipment.add(id); tileEls[id].classList.add('on'); } });
+  refreshStepControls();
 }
 
 function showMyGymBanner(){
